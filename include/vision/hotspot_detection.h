@@ -3,6 +3,7 @@
 
 #include "camera_interface.h"
 #include "common/types.h"
+#include <vector>
 
 namespace vision {
 

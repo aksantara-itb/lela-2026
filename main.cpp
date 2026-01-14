@@ -162,7 +162,7 @@ int main() {
     servo.close();
 
     // Send one status message
-    status.send("Servo open/close test completed");
+    status.send("Servo open/close test completed", 6);
 
     return 0;
 }

@@ -149,28 +149,39 @@
 #include "mavlink/servo_controller.h"
 #include "mavlink/status_reporter.h"
 
-#include <unistd.h>   // for sleep()
+#include <unistd.h>
+#include <ctime>
 
 int main() {
-    mavlink::MavlinkNode node;
+    // ✅ Use VALID MAVLink IDs
+    mavlink::MavlinkNode node(
+        42,                             // system_id (NOT 255)
+        MAV_COMP_ID_ONBOARD_COMPUTER    // component_id = 191
+    );
 
-    // 🔴 REQUIRED: announce yourself first
-    node.sendHeartbeat();
-    sleep(1);   // give MAVProxy/QGC time to register the system
-
-    // mavlink::ServoController servo(node);
     mavlink::StatusReporter status(node);
 
-    // Open servo
-    // servo.open();
-    // sleep(1);
+    time_t last_heartbeat = 0;
+    bool text_sent = false;
 
-    // Close servo
-    // servo.close();
-    // sleep(1);
+    while (true) {
+        time_t now = time(nullptr);
 
-    // Send one status message
-    status.send("rusdy ganteng");
+        /* ---------------- HEARTBEAT (MANDATORY) ---------------- */
+        if (now != last_heartbeat) {
+            node.sendHeartbeat();
+            last_heartbeat = now;
+        }
+
+        /* ---------------- STATUSTEXT ---------------- */
+        if (!text_sent && now - last_heartbeat >= 1) {
+            status.send("rusdy ganteng");
+            text_sent = true;
+        }
+
+        usleep(100000); // 10 Hz loop
+    }
 
     return 0;
 }
+

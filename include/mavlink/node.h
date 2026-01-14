@@ -21,6 +21,9 @@ public:
 
     ~MavlinkNode();
 
+    /* ================= HEARTBEAT ================= */
+    void sendHeartbeat();
+
     /* ================= STATUSTEXT ================= */
     void sendStatusText(uint8_t severity, const std::string& text);
 
@@ -46,4 +49,4 @@ private:
 
 } // namespace mavlink
 
-#endif
+#endif // MAVLINK_NODE_H

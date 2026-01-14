@@ -24,7 +24,7 @@ MavlinkNode::MavlinkNode(uint8_t system_id, uint8_t component_id)
     sockaddr_in local{};
     local.sin_family = AF_INET;
     local.sin_addr.s_addr = INADDR_ANY;
-    local.sin_port = htons(14551);   // must match MAVProxy --out
+    local.sin_port = htons(14551);   // MAVProxy --out
 
     if (bind(sock_fd_, (sockaddr*)&local, sizeof(local)) < 0) {
         perror("bind");
@@ -36,8 +36,8 @@ MavlinkNode::MavlinkNode(uint8_t system_id, uint8_t component_id)
     /* ---- TARGET: MAVProxy INPUT ---- */
     std::memset(&target_addr_, 0, sizeof(target_addr_));
     target_addr_.sin_family = AF_INET;
-    target_addr_.sin_port   = htons(14550);  // MAVProxy listens here
-    inet_pton(AF_INET, "127.0.0.1", &target_addr_.sin_addr);
+    target_addr_.sin_port   = htons(14550);  // MAVProxy master input
+    inet_pton(AF_INET, "127.0.0.1", &target_addr_.sin_addr);    
 
     std::cout << "[MAVLINK NODE] SYSID="
               << int(system_id_)
@@ -52,6 +52,28 @@ MavlinkNode::~MavlinkNode() {
     }
 }
 
+/* ================= HEARTBEAT ================= */
+
+void MavlinkNode::sendHeartbeat()
+{
+    if (sock_fd_ < 0) return;
+
+    mavlink_message_t msg{};
+
+    mavlink_msg_heartbeat_pack(
+        system_id_,                    // source system
+        component_id_,                 // source component
+        &msg,
+        MAV_TYPE_ONBOARD_CONTROLLER,   // component type
+        MAV_AUTOPILOT_INVALID,         // not an autopilot
+        0,                             // base mode
+        0,                             // custom mode
+        MAV_STATE_ACTIVE
+    );
+
+    sendRawMessage(msg);
+}
+
 /* ================= STATUSTEXT ================= */
 
 void MavlinkNode::sendStatusText(uint8_t severity,
@@ -60,18 +82,20 @@ void MavlinkNode::sendStatusText(uint8_t severity,
     mavlink_message_t msg{};
     char text_buf[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN]{};
 
-    std::strncpy(text_buf,
-                 text.c_str(),
-                 MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN - 1);
+    std::strncpy(
+        text_buf,
+        text.c_str(),
+        MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN - 1
+    );
 
     mavlink_msg_statustext_pack(
-        system_id_,        // source system
-        component_id_,     // source component
+        system_id_,
+        component_id_,
         &msg,
         severity,
         text_buf,
-        0,                 // id (single chunk)
-        0                  // chunk_seq
+        0,  // id
+        0   // chunk_seq
     );
 
     sendRawMessage(msg);

@@ -149,17 +149,25 @@
 #include "mavlink/servo_controller.h"
 #include "mavlink/status_reporter.h"
 
+#include <unistd.h>   // for sleep()
+
 int main() {
     mavlink::MavlinkNode node;
 
-    mavlink::ServoController servo(node);
+    // 🔴 REQUIRED: announce yourself first
+    node.sendHeartbeat();
+    sleep(1);   // give MAVProxy/QGC time to register the system
+
+    // mavlink::ServoController servo(node);
     mavlink::StatusReporter status(node);
 
     // Open servo
-    servo.open();
+    // servo.open();
+    // sleep(1);
 
     // Close servo
-    servo.close();
+    // servo.close();
+    // sleep(1);
 
     // Send one status message
     status.send("Servo open/close test completed", 6);

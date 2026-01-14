@@ -36,8 +36,8 @@ MavlinkNode::MavlinkNode(uint8_t system_id, uint8_t component_id)
     /* ---- TARGET: MAVProxy INPUT ---- */
     std::memset(&target_addr_, 0, sizeof(target_addr_));
     target_addr_.sin_family = AF_INET;
-    target_addr_.sin_port   = htons(14550);  // MAVProxy master input
-    inet_pton(AF_INET, "127.0.0.1", &target_addr_.sin_addr);    
+    target_addr_.sin_port = htons(14560);
+    inet_pton(AF_INET, "127.0.0.1", &target_addr_.sin_addr);
 
     std::cout << "[MAVLINK NODE] SYSID="
               << int(system_id_)

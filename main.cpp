@@ -170,7 +170,7 @@ int main() {
     // sleep(1);
 
     // Send one status message
-    status.send("Servo open/close test completed", 6);
+    status.send("rusdy ganteng");
 
     return 0;
 }

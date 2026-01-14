@@ -1,33 +1,23 @@
 #ifndef MAVLINK_STATUS_REPORTER_H
 #define MAVLINK_STATUS_REPORTER_H
 
-#include "common/types.h"
 #include <string>
+#include <cstdint>
 
 namespace mavlink {
 
+class MavlinkNode;  // forward declaration
+
 class StatusReporter {
 public:
-    StatusReporter();
-    ~StatusReporter();
+    explicit StatusReporter(MavlinkNode& mavlink);
 
-    // Initialize status reporter
-    void initialize();
-    
-    // Report system status
-    void reportStatus(common::SystemStatus status);
-    
-    // Report position
-    void reportPosition(const common::Position& pos);
-    
-    // Report mission progress
-    void reportMissionProgress(int progress_percent);
-    
-    // Get last status report time
-    double getLastReportTime() const;
+    // Send plain text to GCS
+    bool send(const std::string& text,
+              uint8_t severity = 6); // MAV_SEVERITY_INFO
 
 private:
-    double last_report_time_;
+    MavlinkNode& mavlink_;
 };
 
 } // namespace mavlink

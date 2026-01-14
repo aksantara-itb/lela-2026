@@ -1,101 +1,68 @@
-// #ifndef MAVLINK_NODE_H
-// #define MAVLINK_NODE_H
-
-// #include <string>
-// #include <thread>
-// #include <atomic>
-
-// namespace mavlink {
-
-// class MavlinkNode {
-// public:
-//     MavlinkNode();
-//     ~MavlinkNode();
-
-//     // Initialize and connect to MAVLink
-//     bool initialize(const std::string& connection_url, int port);
-    
-//     // Start/stop MAVLink I/O
-//     void start();
-//     void stop();
-    
-//     // Send command to vehicle
-//     bool sendCommand(int command_id);
-    
-//     // Check if connected
-//     bool isConnected() const;
-
-// private:
-//     void receiveThread();
-//     void sendThread();
-    
-//     std::thread receive_thread_;
-//     std::thread send_thread_;
-//     std::atomic<bool> running_;
-//     std::atomic<bool> connected_;
-//     int port_;
-//     std::string connection_url_;
-// };
-
-// } // namespace mavlink
-
-// #endif // MAVLINK_NODE_H
-
 #ifndef MAVLINK_NODE_H
 #define MAVLINK_NODE_H
 
-#include <string>
-#include <thread>
-#include <atomic>
 #include <cstdint>
+#include <string>
+
+/* MAVLink core */
+extern "C" {
+#include "../../third_party/mavlink/common/mavlink.h"
+}
 
 namespace mavlink {
 
+/**
+ * @brief Minimal MAVLink message sender (no transport).
+ *
+ * Responsibilities:
+ *  - Build and send MAVLink messages
+ *  - Accept MAVLink telemetry and mission state
+ *
+ * NOT responsible for:
+ *  - Connection / sockets / UART
+ *  - Threading
+ */
 class MavlinkNode {
 public:
-    MavlinkNode();
-    ~MavlinkNode();
+    MavlinkNode(uint8_t system_id = 255,
+                uint8_t component_id = MAV_COMP_ID_ONBOARD_COMPUTER);
 
-    // Initialize and connect to MAVLink (UDP / Serial handled internally)
-    bool initialize(const std::string& connection_url, int port);
+    /* ================= STATUSTEXT ================= */
 
-    // Start/stop MAVLink I/O threads
-    void start();
-    void stop();
+    void sendStatusText(uint8_t severity, const std::string& text);
 
-    // Connection state
-    bool isConnected() const;
+    /* ================= SERVO ================= */
 
-    /* ================= SAFE, ALLOWED ACTIONS ================= */
+    void sendServoCommand(uint8_t channel, uint16_t pwm);
 
-    // Send STATUSTEXT to GCS
-    bool sendStatusText(const std::string& text,
-                        uint8_t severity = 6); // MAV_SEVERITY_INFO
+    /* ================= VFR_HUD ================= */
 
-    // Move a servo using MAV_CMD_DO_SET_SERVO
-    bool setServo(uint8_t servo_number, uint16_t pwm);
+    /**
+     * @brief Accept incoming MAVLink VFR_HUD message
+     */
+    void acceptVfrHud(const mavlink_message_t& msg);
+
+
+    /* ================= MISSION ================= */
+
+    /**
+     * @brief Accept MAVLink MISSION_ITEM_REACHED message
+     *
+     * Corresponds to /mavros/mission/reached
+     */
+    void acceptMissionReached(const mavlink_message_t& msg);
 
 private:
-    /* ================= INTERNAL THREADS ================= */
+    /* ================= LOW LEVEL SEND ================= */
 
-    void receiveThread();
-    void sendThread();
+    /**
+     * @brief Send encoded MAVLink message bytes
+     * @note Implemented by transport layer
+     */
+    void sendRawMessage(const mavlink_message_t& msg);
 
-    /* ================= INTERNAL STATE ================= */
-
-    std::thread receive_thread_;
-    std::thread send_thread_;
-
-    std::atomic<bool> running_{false};
-    std::atomic<bool> connected_{false};
-
-    int port_{0};
-    std::string connection_url_;
-
-    /* ================= MAVLINK IDS ================= */
-
-    uint8_t system_id_{255};     // Companion computer
-    uint8_t component_id_{190};  // MAV_COMP_ID_ONBOARD_COMPUTER
+    uint8_t system_id_;
+    uint8_t component_id_;
 };
 
 } // namespace mavlink

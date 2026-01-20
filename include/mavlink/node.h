@@ -3,6 +3,8 @@
 
 #include <cstdint>
 #include <string>
+#include <thread>
+#include <atomic>
 
 /* POSIX sockets */
 #include <netinet/in.h>
@@ -36,7 +38,14 @@ public:
     /* ================= MISSION ================= */
     void acceptMissionReached(const mavlink_message_t& msg);
 
+    bool fcAlive() const;
+
 private:
+    /* ================= RX ================= */
+    void rxLoop();
+    void handleMessage(const mavlink_message_t& msg);
+
+    /* ================= TX ================= */
     void sendRawMessage(const mavlink_message_t& msg);
 
     uint8_t system_id_;
@@ -45,6 +54,12 @@ private:
     /* UDP transport */
     int sock_fd_;
     sockaddr_in target_addr_;
+
+    /* RX thread control */
+    std::thread rx_thread_;
+    std::atomic<bool> running_;
+
+    std::atomic<bool> fc_alive_{false};
 };
 
 } // namespace mavlink

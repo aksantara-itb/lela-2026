@@ -145,6 +145,46 @@
 //     return 0;
 // }
 
+// #include "mavlink/node.h"
+// #include "mavlink/servo_controller.h"
+// #include "mavlink/status_reporter.h"
+
+// #include <unistd.h>
+// #include <ctime>
+
+// int main() {
+//     // ✅ Use VALID MAVLink IDs
+//     mavlink::MavlinkNode node(
+//         42,                             // system_id (NOT 255)
+//         MAV_COMP_ID_ONBOARD_COMPUTER    // component_id = 191
+//     );
+
+//     mavlink::StatusReporter status(node);
+
+//     time_t last_heartbeat = 0;
+//     bool text_sent = false;
+
+//     while (true) {
+//         time_t now = time(nullptr);
+
+//         /* ---------------- HEARTBEAT (MANDATORY) ---------------- */
+//         if (now != last_heartbeat) {
+//             node.sendHeartbeat();
+//             last_heartbeat = now;
+//         }
+
+//         /* ---------------- STATUSTEXT ---------------- */
+//         if (!text_sent && now - last_heartbeat >= 1) {
+//             status.send("rusdy ganteng");
+//             text_sent = true;
+//         }
+
+//         usleep(100000); // 10 Hz loop
+//     }
+
+//     return 0;
+// }
+
 #include "mavlink/node.h"
 #include "mavlink/servo_controller.h"
 #include "mavlink/status_reporter.h"
@@ -153,10 +193,9 @@
 #include <ctime>
 
 int main() {
-    // ✅ Use VALID MAVLink IDs
     mavlink::MavlinkNode node(
-        42,                             // system_id (NOT 255)
-        MAV_COMP_ID_ONBOARD_COMPUTER    // component_id = 191
+        42,
+        MAV_COMP_ID_ONBOARD_COMPUTER
     );
 
     mavlink::StatusReporter status(node);
@@ -167,21 +206,23 @@ int main() {
     while (true) {
         time_t now = time(nullptr);
 
-        /* ---------------- HEARTBEAT (MANDATORY) ---------------- */
+        // ---- Heartbeat @ 1 Hz ----
         if (now != last_heartbeat) {
             node.sendHeartbeat();
             last_heartbeat = now;
         }
 
-        /* ---------------- STATUSTEXT ---------------- */
-        if (!text_sent && now - last_heartbeat >= 1) {
+        // ---- Send STATUSTEXT once FC is alive ----
+        if (!text_sent && node.fcAlive()) {
             status.send("rusdy ganteng");
             text_sent = true;
         }
 
-        usleep(100000); // 10 Hz loop
+        usleep(100000);
     }
 
     return 0;
 }
+
+
 

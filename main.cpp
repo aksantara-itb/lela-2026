@@ -226,6 +226,7 @@
 
 #include "mavlink/node.h"
 #include "mavlink/servo_controller.h"
+#include "mavlink/status_reporter.h"
 
 #include <unistd.h>
 #include <ctime>
@@ -237,6 +238,7 @@ int main() {
     );
 
     mavlink::ServoController servo(node);
+    mavlink::StatusReporter status(node);
 
     time_t last_heartbeat = 0;
     time_t last_toggle = 0;
@@ -256,18 +258,20 @@ int main() {
         if (!fc_ready && node.fcAlive()) {
             fc_ready = true;
             last_toggle = now;
-            servo.close();
+            // servo.close();
         }
 
         /* ---- Toggle servo every 3 seconds ---- */
-        // if (fc_ready && (now - last_toggle) >= 3) {
-        //     if (servo.isOpen()) {
-        //         servo.close();
-        //     } else {
-        //         servo.open();
-        //     }
-        //     last_toggle = now;
-        // }
+        if (fc_ready && (now - last_toggle) >= 3) {
+            if (servo.isOpen()) {
+                servo.close();
+            } else {
+                servo.open();
+            }
+            // status.send("Rusdy ganteng");
+
+            last_toggle = now;
+        }
 
         usleep(100000); // 100 ms
     }

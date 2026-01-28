@@ -185,9 +185,47 @@
 //     return 0;
 // }
 
+// #include "mavlink/node.h"
+// #include "mavlink/servo_controller.h"
+// #include "mavlink/status_reporter.h"
+
+// #include <unistd.h>
+// #include <ctime>
+
+// int main() {
+//     mavlink::MavlinkNode node(
+//         42,
+//         MAV_COMP_ID_ONBOARD_COMPUTER
+//     );
+
+//     mavlink::StatusReporter status(node);
+
+//     time_t last_heartbeat = 0;
+//     bool text_sent = false;
+
+//     while (true) {
+//         time_t now = time(nullptr);
+
+//         // ---- Heartbeat @ 1 Hz ----
+//         if (now != last_heartbeat) {
+//             node.sendHeartbeat();
+//             last_heartbeat = now;
+//         }
+
+//         // ---- Send STATUSTEXT once FC is alive ----
+//         if (!text_sent && node.fcAlive()) {
+//             status.send("rusdy ganteng");
+//             text_sent = true;
+//         }
+
+//         usleep(100000);
+//     }
+
+//     return 0;
+// }
+
 #include "mavlink/node.h"
 #include "mavlink/servo_controller.h"
-#include "mavlink/status_reporter.h"
 
 #include <unistd.h>
 #include <ctime>
@@ -198,31 +236,42 @@ int main() {
         MAV_COMP_ID_ONBOARD_COMPUTER
     );
 
-    mavlink::StatusReporter status(node);
+    mavlink::ServoController servo(node);
 
     time_t last_heartbeat = 0;
-    bool text_sent = false;
+    time_t last_toggle = 0;
+
+    bool fc_ready = false;
 
     while (true) {
         time_t now = time(nullptr);
 
-        // ---- Heartbeat @ 1 Hz ----
+        /* ---- Heartbeat @ 1 Hz ---- */
         if (now != last_heartbeat) {
             node.sendHeartbeat();
             last_heartbeat = now;
         }
 
-        // ---- Send STATUSTEXT once FC is alive ----
-        if (!text_sent && node.fcAlive()) {
-            status.send("rusdy ganteng");
-            text_sent = true;
+        /* ---- Wait for FC ---- */
+        if (!fc_ready && node.fcAlive()) {
+            fc_ready = true;
+            last_toggle = now;
         }
 
-        usleep(100000);
+        /* ---- Toggle servo every 3 seconds ---- */
+        if (fc_ready && (now - last_toggle) >= 3) {
+            if (servo.isOpen()) {
+                servo.close();
+            } else {
+                servo.open();
+            }
+            last_toggle = now;
+        }
+
+        usleep(100000); // 100 ms
     }
 
     return 0;
 }
-
 
 

@@ -4,11 +4,12 @@
 namespace mavlink {
 
 ServoController::ServoController(MavlinkNode& mavlink)
-    : mavlink_(mavlink)
-{
-    // These are expected to be set via config.h or externally
-    // Leaving them uninitialized here is intentional per design
-}
+    : mavlink_(mavlink),
+      servo_channel_(0),
+      pwm_open_(1000),
+      pwm_close_(2000)
+{}
+
 
 /* ================= OPEN ================= */
 

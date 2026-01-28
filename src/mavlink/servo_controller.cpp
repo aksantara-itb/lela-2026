@@ -5,7 +5,7 @@ namespace mavlink {
 
 ServoController::ServoController(MavlinkNode& mavlink)
     : mavlink_(mavlink),
-      servo_channel_(0),
+      servo_channel_(7),
       pwm_open_(1000),
       pwm_close_(2000)
 {}

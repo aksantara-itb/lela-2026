@@ -256,17 +256,18 @@ int main() {
         if (!fc_ready && node.fcAlive()) {
             fc_ready = true;
             last_toggle = now;
+            servo.close();
         }
 
         /* ---- Toggle servo every 3 seconds ---- */
-        if (fc_ready && (now - last_toggle) >= 3) {
-            if (servo.isOpen()) {
-                servo.close();
-            } else {
-                servo.open();
-            }
-            last_toggle = now;
-        }
+        // if (fc_ready && (now - last_toggle) >= 3) {
+        //     if (servo.isOpen()) {
+        //         servo.close();
+        //     } else {
+        //         servo.open();
+        //     }
+        //     last_toggle = now;
+        // }
 
         usleep(100000); // 100 ms
     }

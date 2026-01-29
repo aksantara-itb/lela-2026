@@ -234,7 +234,7 @@
 int main() {
     mavlink::MavlinkNode node(
         42,
-        MAV_COMP_ID_AUTOPILOT1
+        MAV_COMP_ID_ONBOARD_COMPUTER
     );
 
     mavlink::ServoController servo(node);
@@ -263,12 +263,12 @@ int main() {
 
         /* ---- Toggle servo every 3 seconds ---- */
         if (fc_ready && (now - last_toggle) >= 3) {
-            // if (servo.isOpen()) {
-            //     servo.close();
-            // } else {
-            //     servo.open();
-            // }
-            status.send("Rusdy ganteng");
+            if (servo.isOpen()) {
+                servo.close();
+            } else {
+                servo.open();
+            }
+            // status.send("Rusdy ganteng");
 
             last_toggle = now;
         }

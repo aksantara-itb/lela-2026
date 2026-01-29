@@ -376,7 +376,7 @@ void MavlinkNode::sendStatusText(uint8_t severity,
         0
     );
 
-    sendRawMessageUdp(msg);
+    sendRawMessage(msg);
 }
 
 

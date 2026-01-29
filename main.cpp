@@ -251,6 +251,7 @@ int main() {
         /* ---- Heartbeat @ 1 Hz ---- */
         if (now != last_heartbeat) {
             node.sendHeartbeat();
+            node.sendHeartbeatToGCS();
             last_heartbeat = now;
         }
 
@@ -268,7 +269,7 @@ int main() {
             } else {
                 servo.open();
             }
-            // status.send("Rusdy ganteng");
+            status.send("Rusdy ganteng");
 
             last_toggle = now;
         }

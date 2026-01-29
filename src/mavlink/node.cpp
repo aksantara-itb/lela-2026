@@ -7,6 +7,7 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <errno.h>
+#include <sys/socket.h>
 
 
 namespace mavlink {
@@ -60,6 +61,7 @@ MavlinkNode::MavlinkNode(uint8_t system_id, uint8_t component_id)
     : system_id_(system_id),
       component_id_(component_id),
       sock_fd_(-1),
+      udp_fd_(-1),
       running_(true)
 {
     // ---- OPEN SERIAL DEVICE ----
@@ -68,6 +70,27 @@ MavlinkNode::MavlinkNode(uint8_t system_id, uint8_t component_id)
         perror("open(/dev/ttyACM0)");
         return;
     }
+
+    // ---- OPEN UDP SOCKET TO GCS ----
+    udp_fd_ = socket(AF_INET, SOCK_DGRAM, 0);
+    if (udp_fd_ < 0) {
+        perror("socket(UDP)");
+    } else {
+        memset(&gcs_addr_, 0, sizeof(gcs_addr_));
+        gcs_addr_.sin_family = AF_INET;
+        gcs_addr_.sin_port = htons(6669);
+
+        if (inet_pton(AF_INET, "100.123.232.102", &gcs_addr_.sin_addr) <= 0) {
+            perror("inet_pton");
+            close(udp_fd_);
+            udp_fd_ = -1;
+        } else {
+            std::cout << "[MAVLINK NODE] UDP GCS @ 100.123.232.102:6669\n";
+        }
+    }
+
+
+
 
     // ---- CONFIGURE SERIAL PORT ----
     struct termios tty{};
@@ -115,6 +138,8 @@ MavlinkNode::MavlinkNode(uint8_t system_id, uint8_t component_id)
               << " COMPID="
               << int(component_id_)
               << std::endl;
+
+    
 }
 
 
@@ -279,7 +304,55 @@ void MavlinkNode::sendHeartbeat()
 
 }
 
+void MavlinkNode::sendHeartbeatToGCS()
+{
+    if (udp_fd_ < 0) return;
+
+    mavlink_message_t msg{};
+    mavlink_msg_heartbeat_pack(
+        system_id_,
+        component_id_,
+        &msg,
+        MAV_TYPE_ONBOARD_CONTROLLER,
+        MAV_AUTOPILOT_INVALID,
+        0,
+        0,
+        MAV_STATE_ACTIVE
+    );
+
+    sendRawMessageUdp(msg);
+
+    printf("[HB] SYSID=%d COMPID=%d → GCS\n",
+           system_id_, component_id_);
+}
+
+
 /* ================= STATUSTEXT ================= */
+
+// void MavlinkNode::sendStatusText(uint8_t severity,
+//                                  const std::string& text)
+// {
+//     mavlink_message_t msg{};
+//     char text_buf[MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN]{};
+
+//     std::strncpy(
+//         text_buf,
+//         text.c_str(),
+//         MAVLINK_MSG_STATUSTEXT_FIELD_TEXT_LEN - 1
+//     );
+
+//     mavlink_msg_statustext_pack(
+//         system_id_,
+//         component_id_,
+//         &msg,
+//         severity,
+//         text_buf,
+//         0,
+//         0
+//     );
+
+//     sendRawMessage(msg);
+// }
 
 void MavlinkNode::sendStatusText(uint8_t severity,
                                  const std::string& text)
@@ -303,8 +376,9 @@ void MavlinkNode::sendStatusText(uint8_t severity,
         0
     );
 
-    sendRawMessage(msg);
+    sendRawMessageUdp(msg);
 }
+
 
 /* ================= SERVO ================= */
 
@@ -368,5 +442,21 @@ void MavlinkNode::sendRawMessage(const mavlink_message_t& msg)
     }
 }
 
+void MavlinkNode::sendRawMessageUdp(const mavlink_message_t& msg)
+{
+    if (udp_fd_ < 0) return;
+
+    uint8_t buffer[MAVLINK_MAX_PACKET_LEN];
+    uint16_t len = mavlink_msg_to_send_buffer(buffer, &msg);
+
+    sendto(
+        udp_fd_,
+        buffer,
+        len,
+        0,
+        (sockaddr*)&gcs_addr_,
+        sizeof(gcs_addr_)
+    );
+}
 
 }

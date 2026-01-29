@@ -25,6 +25,7 @@ public:
 
     /* ================= HEARTBEAT ================= */
     void sendHeartbeat();
+    void sendHeartbeatToGCS();
 
     /* ================= STATUSTEXT ================= */
     void sendStatusText(uint8_t severity, const std::string& text);
@@ -47,13 +48,16 @@ private:
 
     /* ================= TX ================= */
     void sendRawMessage(const mavlink_message_t& msg);
+    void sendRawMessageUdp(const mavlink_message_t& msg);
 
     uint8_t system_id_;
     uint8_t component_id_;
 
     /* UDP transport */
     int sock_fd_;
+    int udp_fd_;
     sockaddr_in target_addr_;
+    sockaddr_in gcs_addr_;
 
     /* RX thread control */
     std::thread rx_thread_;

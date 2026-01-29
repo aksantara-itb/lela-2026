@@ -234,7 +234,7 @@
 int main() {
     mavlink::MavlinkNode node(
         42,
-        MAV_COMP_ID_ONBOARD_COMPUTER
+        MAV_COMP_ID_AUTOPILOT1
     );
 
     mavlink::ServoController servo(node);

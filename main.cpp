@@ -233,8 +233,8 @@
 
 int main() {
     mavlink::MavlinkNode node(
-        42,
-        MAV_COMP_ID_AUTOPILOT1
+        255,
+        MAV_COMP_ID_ONBOARD_COMPUTER
     );
 
     mavlink::ServoController servo(node);
@@ -251,7 +251,7 @@ int main() {
         /* ---- Heartbeat @ 1 Hz ---- */
         if (now != last_heartbeat) {
             node.sendHeartbeat();
-            node.sendHeartbeatToGCS();
+            // node.sendHeartbeatToGCS();
             last_heartbeat = now;
         }
 
